@@ -9,6 +9,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,10 +27,16 @@ import java.util.Optional;
 public class TrainingServiceImp implements TrainingService {
     @Autowired
     TrainingRepository trainingRepository;
+
+    @Override
+    public Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createDate"));
+        return trainingRepository.findAll(pageable);
+    }
+
     @Override
     public List<TrainingProgram> getAllTrainingProgram() {
-        Sort sortByCreateDateDesc = Sort.by(Sort.Direction.DESC, "createDate");
-        return trainingRepository.findAll(sortByCreateDateDesc);
+        return trainingRepository.findAll();
     }
 
     @Override
@@ -67,7 +76,7 @@ public class TrainingServiceImp implements TrainingService {
                             modifyDate,
                             startTime,
                             csvRecord.get("duration"),
-                            Integer.parseInt(csvRecord.get("topicId")),
+                            csvRecord.get("topicId"),
                             csvRecord.get("status")
                     );
                     trainingProgramList.add(trainingProgram);
@@ -117,15 +126,18 @@ public class TrainingServiceImp implements TrainingService {
         return trainingRepository.existsById(id);
     }
 
+    @Override
     public TrainingProgram searchTrainingProgram(Integer trainingId) {
         return trainingRepository.findById(trainingId).orElse(null);
     }
 
-    public Optional<TrainingProgram> findTrainingProgramWithClasses(Integer trainingId) {
-        Optional<TrainingProgram> list = trainingRepository.findTrainingProgramWithClass(trainingId);
-        return list;
+
+    @Override
+    public Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable) {
+        return trainingRepository.findByNameContaining(name, pageable);
     }
 
+    @Override
     public void deactivateTrainingProgram(Integer trainingId) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
 
@@ -138,6 +150,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
+    @Override
     public void activateTrainingProgram(Integer trainingId) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
 
@@ -145,6 +158,36 @@ public class TrainingServiceImp implements TrainingService {
             TrainingProgram trainingProgram = optionalTrainingProgram.get();
             trainingProgram.setStatus("Active");
             trainingRepository.save(trainingProgram);
+        } else {
+            throw new EntityNotFoundException("Training program not found");
+        }
+    }
+
+    public TrainingProgram updateTrainingProgram(Integer trainingId, TrainingProgram updatedProgram) {
+        Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
+
+        if (optionalTrainingProgram.isPresent()) {
+            TrainingProgram trainingProgram = optionalTrainingProgram.get();
+            if(!trainingProgram.getStatus().equals("Active")){
+                throw new IllegalStateException("Training program must be active to be updated");
+            }
+
+            LocalDate currentDate = LocalDate.now();
+            if (trainingProgram.getModifyDate() != null && trainingProgram.getModifyDate().isAfter(currentDate)) {
+                throw new IllegalStateException("Invalid modify date");
+            }
+
+            trainingProgram.setName(updatedProgram.getName());
+            trainingProgram.setCreateDate(updatedProgram.getCreateDate());
+            trainingProgram.setCreateBy(updatedProgram.getCreateBy());
+            trainingProgram.setDuration(updatedProgram.getDuration());
+            trainingProgram.setModifyBy(updatedProgram.getModifyBy());
+            trainingProgram.setTopicId(updatedProgram.getTopicId());
+            trainingProgram.setStartTime(updatedProgram.getStartTime());
+            trainingProgram.setModifyDate(currentDate);
+
+
+            return trainingRepository.save(trainingProgram);
         } else {
             throw new EntityNotFoundException("Training program not found");
         }

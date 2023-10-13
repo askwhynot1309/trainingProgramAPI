@@ -20,21 +20,22 @@ import java.time.LocalDate;
 public class Assignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "assignmentId", nullable = false, length = 500)
     private Integer assignmentId;
 
-    @Length(max = 45)
+    @Column(name = "title", nullable = false, length = 500)
     private String title;
 
-    @Length(max = 45)
+    @Column(name = "description", nullable = false, length = 500)
     private String description;
 
-    @Length(max = 45)
+    @Column(name = "dueDate", nullable = false)
     private LocalDate dueDate;
 
-    @Length(max = 45)
+    @Column(name = "score", nullable = false)
     private int score;
 
-    @Length(max = 45)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainingId")
     @JsonIgnore

@@ -18,22 +18,24 @@ import javax.persistence.*;
 public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "resourceId", nullable = false, length = 500)
     private Integer resourceId;
 
-    @Length(max = 45)
+    @Column(name = "title", nullable = false, length = 500)
     private String title;
 
-    @Length(max = 45)
+    @Column(name = "description", nullable = false, length = 500)
     private String description;
 
-    @Length(max = 45)
+    @Column(name = "file", nullable = false, length = 500)
     private String file;
 
-    @Length(max = 45)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainingId")
     @JsonIgnore
     private TrainingProgram trainingProgram;
+
 
     @Override
     public String toString() {
@@ -45,3 +47,4 @@ public class Resource {
                 '}';
     }
 }
+

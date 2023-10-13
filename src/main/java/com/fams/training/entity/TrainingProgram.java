@@ -20,6 +20,7 @@ import java.util.List;
 @Table(name = "trainingProgram")
 public class TrainingProgram {
     @Id
+    @Column(name = "trainingId", nullable = false, length = 500)
     private Integer trainingId;
 
     @Length(max = 45)
@@ -30,40 +31,35 @@ public class TrainingProgram {
     @OneToMany(mappedBy = "trainingProgram", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Resource> resources = new ArrayList<>();
 
-    @Length(max = 45)
+    @Column(name = "name", nullable = false, length = 500)
     private String name;
 
-    @Length(max = 45)
+    @Column(name = "createBy", nullable = false, length = 500)
     private String createBy;
 
-    @Length(max = 45)
+    @Column(name = "createDate", nullable = false)
     private LocalDate createDate;
 
-    @Length(max = 45)
+    @Column(name = "modifyBy", nullable = false, length = 500)
     private String modifyBy;
 
-    @Length(max = 45)
+    @Column(name = "modifyDate", nullable = false)
     private LocalDate modifyDate;
 
-    @Length(max = 45)
+    @Column(name = "startTime", nullable = false)
     private LocalDate startTime;
 
-    @Length(max = 45)
+    @Column(name = "duration", nullable = false)
     private String duration;
 
-    @Length(max = 45)
-    private Integer topicId;
+    @Column(name = "topicId", nullable = false, length = 500)
+    private String topicId;
 
-    @Length(max = 45)
+    @Column(name = "status", nullable = false, length = 500)
     private String status;
 
-    @OneToMany(mappedBy = "trainingProgram", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Class> classes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "trainingProgram", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TrainingProgramSyllabus> trainingProgramSyllabuses = new ArrayList<>();
-
-    public TrainingProgram(Integer trainingId, String name, String createBy, LocalDate createDate, String modifyBy, LocalDate modifyDate, LocalDate startTime, String duration, Integer topicId, String status) {
+    public TrainingProgram(Integer trainingId, String name, String createBy, LocalDate createDate, String modifyBy, LocalDate modifyDate, LocalDate startTime, String duration, String topicId, String status) {
         this.trainingId = trainingId;
         this.name = name;
         this.createBy = createBy;
