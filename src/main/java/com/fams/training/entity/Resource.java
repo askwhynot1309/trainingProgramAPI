@@ -5,9 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -21,30 +21,31 @@ public class Resource {
     @Column(name = "resourceId", nullable = false, length = 500)
     private Integer resourceId;
 
-    @Column(name = "title", nullable = false, length = 500)
+    @Column(name = "title", length = 500)
     private String title;
 
-    @Column(name = "description", nullable = false, length = 500)
+    @Column(name = "description", length = 500)
     private String description;
 
-    @Column(name = "file", nullable = false, length = 500)
-    private String file;
+    @Column(name = "status", length = 500)
+    private String status;
 
+    @Column(name = "filename", length = 500)
+    private String filename;
+
+    @Column(name = "uploadedBy", length = 500, nullable = true)
+    private String uploadedBy;
+
+    @Column(name = "uploadDateTime")
+    private LocalDateTime uploadDateTime;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    private byte[] data;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainingId")
     @JsonIgnore
     private TrainingProgram trainingProgram;
 
-
-    @Override
-    public String toString() {
-        return "Resource{" +
-                "resourceId=" + resourceId +
-                ", title='" + title + '\'' +
-                ", description='" + description + '\'' +
-                ", file='" + file + '\'' +
-                '}';
-    }
 }
-

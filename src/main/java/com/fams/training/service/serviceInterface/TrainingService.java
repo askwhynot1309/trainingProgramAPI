@@ -19,4 +19,7 @@ public interface TrainingService {
     public void activateTrainingProgram(Integer trainingId);
     public TrainingProgram searchTrainingProgram(Integer trainingId);
     Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable);
+    Page<TrainingProgram> filterByStatus(String name, Pageable pageable);
+    TrainingProgram duplicateTrainingProgram(Integer id);
+
 }

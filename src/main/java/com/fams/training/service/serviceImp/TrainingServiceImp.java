@@ -138,6 +138,48 @@ public class TrainingServiceImp implements TrainingService {
     }
 
     @Override
+    public Page<TrainingProgram> filterByStatus(String key, Pageable pageable) {
+        return trainingRepository.findByStatus(key, pageable);
+    }
+
+    @Override
+    public TrainingProgram duplicateTrainingProgram(Integer id) {
+        TrainingProgram program = trainingRepository.findById(id).orElse(null);
+        TrainingProgram duplicateProgram = new TrainingProgram();
+        if (program == null) {
+            return null;
+        } else {
+
+            int newestId = getNextTrainingProgramId();
+            duplicateProgram.setTrainingId(newestId);
+            duplicateProgram.setName(program.getName());
+            duplicateProgram.setCreateBy(program.getCreateBy());
+            duplicateProgram.setCreateDate(program.getCreateDate());
+            duplicateProgram.setModifyBy(program.getModifyBy());
+            duplicateProgram.setModifyDate(program.getModifyDate());
+            duplicateProgram.setStartTime(program.getStartTime());
+            duplicateProgram.setTopicId(program.getTopicId());
+            duplicateProgram.setDuration(program.getDuration());
+            duplicateProgram.setStatus(program.getStatus());
+
+            trainingRepository.save(duplicateProgram);
+
+            return duplicateProgram;
+        }
+    }
+
+    public int getNextTrainingProgramId() {
+        List<TrainingProgram> trainingPrograms = trainingRepository.findAllByOrderByTrainingIdDesc();
+
+        if (!trainingPrograms.isEmpty()) {
+            return trainingPrograms.get(0).getTrainingId() + 1;
+        } else {
+            return 1;
+        }
+    }
+
+
+    @Override
     public void deactivateTrainingProgram(Integer trainingId) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
 
@@ -189,7 +231,7 @@ public class TrainingServiceImp implements TrainingService {
 
             return trainingRepository.save(trainingProgram);
         } else {
-            throw new EntityNotFoundException("Training program not found");
+            throw new EntityNotFoundException("Training program not found. Id not found");
         }
     }
 }
