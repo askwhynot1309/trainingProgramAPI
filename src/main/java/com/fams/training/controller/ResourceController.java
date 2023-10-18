@@ -3,9 +3,8 @@ package com.fams.training.controller;
 import com.fams.training.DTO.PageableDTO;
 import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.entity.Resource;
-import com.fams.training.entity.TrainingProgram;
 import com.fams.training.repository.ResourceRepository;
-import com.fams.training.service.serviceInterface.ResourceService;
+import com.fams.training.service.Interface.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -14,10 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -79,6 +74,23 @@ public class ResourceController {
         byte[] fileData = resourceService.downloadTrainingMaterial(resourceId);
         if (fileData != null) {
             Resource resource = repository.findById(resourceId).orElse(null);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + resource.getFilename());
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(fileData);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/download-training-template")
+    public ResponseEntity<byte[]> downloadTrainingProgramTemplate() {
+        String title = "Training program template";
+        byte[] fileData = resourceService.downloadTrainingProgramTemplate(title);
+        if (fileData != null) {
+            Resource resource = repository.findById(1).orElse(null);
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + resource.getFilename());
             return ResponseEntity.ok()

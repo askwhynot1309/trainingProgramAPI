@@ -5,7 +5,7 @@ import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.entity.TrainingProgram;
 import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
-import com.fams.training.service.serviceImp.TrainingServiceImp;
+import com.fams.training.service.Imp.TrainingServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -39,12 +38,12 @@ public class TrainingController {
             data.setTotalPages(list.getTotalPages());
             if (list.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                        new ResponseMessage("204", null, "No content found")
+                        new ResponseMessage("1", null, "No content found")
                 );
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", data, "Success")
+                    new ResponseMessage("0", data, "Success")
             );
 
         } catch (Exception e) {
@@ -63,16 +62,16 @@ public class TrainingController {
 
             if (trainingProgram != null) {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("200", trainingProgram, "Success")
+                        new ResponseMessage("0", trainingProgram, "Success")
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("404", null, "Training program not found")
+                        new ResponseMessage("1", null, "Training program not found")
                 );
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -82,15 +81,15 @@ public class TrainingController {
         try {
             trainingServiceImp.deactivateTrainingProgram(trainingId);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", null, "Training program deactivated successfully")
+                    new ResponseMessage("0", null, "Training program deactivated successfully")
             );
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("404", null, "Training program not found")
+                    new ResponseMessage("1", null, "Training program not found")
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -100,15 +99,15 @@ public class TrainingController {
         try {
             trainingServiceImp.activateTrainingProgram(trainingId);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", null, "Training program activated successfully")
+                    new ResponseMessage("0", null, "Training program activated successfully")
             );
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("404", null, "Training program not found")
+                    new ResponseMessage("1", null, "Training program not found")
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -116,27 +115,33 @@ public class TrainingController {
 
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
-    public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ResponseMessage> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("encoding") String encoding,
+            @RequestParam("columnSeparator") char columnSeparator,
+            @RequestParam("scanningMethod") String scanningMethod,
+            @RequestParam("duplicateHandling") String duplicateHandling
+    ) {
         String message = "";
         String code;
         try {
             if (TrainingServiceImp.hasCSVFormat(file)) {
-                trainingServiceImp.importFile(file);
-                code = "200";
+                trainingServiceImp.importTrainingProgramFromFile(file, file.getInputStream(), encoding, columnSeparator, scanningMethod, duplicateHandling);
+                code = "0";
                 List<TrainingProgram> data = trainingServiceImp.getAllTrainingProgram();
                 message = "Uploaded the file successfully: " + file.getOriginalFilename();
                 return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(code, data, message));
             } else {
-                code = "400";
+                code = "1";
                 message = "Invalid file format: " + file.getOriginalFilename();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(code, null, message));
             }
         } catch (DuplicateRecordException e) {
-            code = "409";
+            code = "1";
             message = e.getMessage();
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ResponseMessage(code, null, message));
         } catch (Exception e) {
-            code = "409";
+            code = "1";
             message = "Could not upload the file: " + file.getOriginalFilename() + "!";
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ResponseMessage(code, null, message));
         }
@@ -148,17 +153,17 @@ public class TrainingController {
 
         if (trainingServiceImp.existsTrainingProgramById(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                    new ResponseMessage("409", null, "Duplicate ID")
+                    new ResponseMessage("1", null, "Duplicate ID")
             );
         }
         int check = trainingServiceImp.createNewTrainingProgram(trainingProgram);
         if (check > 0){
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", trainingProgram, "Success")
+                    new ResponseMessage("0", trainingProgram, "Success")
             );
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ResponseMessage("500", null, "Failed")
+                new ResponseMessage("1", null, "Failed")
         );
     }
 
@@ -167,19 +172,19 @@ public class TrainingController {
         try {
             TrainingProgram data = trainingServiceImp.updateTrainingProgram(trainingId, updatedProgram);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", data, "Training program updated successfully")
+                    new ResponseMessage("0", data, "Training program updated successfully")
             );
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("404", null, "Training program not found. Id not found")
+                    new ResponseMessage("1", null, "Training program not found. Id not found")
             );
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ResponseMessage("400", null, e.getMessage())
+                    new ResponseMessage("1", null, e.getMessage())
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -214,16 +219,16 @@ public class TrainingController {
             data.setTotalPages(list.getTotalPages());
             if (list.isEmpty()){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("404", null, "Record not found")
+                        new ResponseMessage("1", null, "Record not found")
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("200", data, "Success")
+                        new ResponseMessage("0", data, "Success")
                 );
             }
         } catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -247,16 +252,16 @@ public class TrainingController {
 
             if (list.isEmpty()){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("404", null, "Record not found")
+                        new ResponseMessage("1", null, "Record not found")
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("200", data, "Success")
+                        new ResponseMessage("0", data, "Success")
                 );
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("500", null, "Internal server error")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -266,11 +271,11 @@ public class TrainingController {
         TrainingProgram data = trainingServiceImp.duplicateTrainingProgram(trainingId);
         if (data == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("404", null, "Program not found to duplicate")
+                    new ResponseMessage("1", null, "Program not found to duplicate")
             );
         } else {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", null, "Duplicate successfully")
+                    new ResponseMessage("0", null, "Duplicate successfully")
             );
         }
     }
