@@ -1,10 +1,15 @@
 package com.fams.training.service.Imp;
 
+import com.fams.training.DTO.ClassDTO;
+import com.fams.training.DTO.PageableDTO;
+import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.entity.TrainingProgram;
 import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
 import com.fams.training.repository.TrainingRepository;
 import com.fams.training.service.Interface.TrainingService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -13,7 +18,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
@@ -23,11 +30,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TrainingServiceImp implements TrainingService {
     @Autowired
     TrainingRepository trainingRepository;
+
+    @Autowired
+    RestTemplate restTemplate;
 
     @Override
     public Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size) {
@@ -344,4 +355,23 @@ public class TrainingServiceImp implements TrainingService {
             throw new EntityNotFoundException("Training program not found. Id not found");
         }
     }
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    public List<ClassDTO> getClassbyTrainingProgramId(Integer id) {
+        ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity("http://localhost:8801/classList", ResponseMessage.class);
+
+        ResponseMessage responseObject = responseEntity.getBody();
+
+        if (responseObject != null && responseObject.getData() != null) {
+            PageableDTO<ClassDTO> pageResponse = objectMapper.convertValue(responseObject.getData(), new TypeReference<PageableDTO<ClassDTO>>() {});
+            return pageResponse.getContent().stream()
+                    .filter(classDTO -> classDTO.getTrainingProgramId().equals(id))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
 }

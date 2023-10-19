@@ -1,5 +1,6 @@
 package com.fams.training.controller;
 
+import com.fams.training.DTO.ClassDTO;
 import com.fams.training.DTO.PageableDTO;
 import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.entity.TrainingProgram;
@@ -278,5 +279,10 @@ public class TrainingController {
                     new ResponseMessage("0", null, "Duplicate successfully")
             );
         }
+    }
+
+    @GetMapping("/classes/{id}")
+    public ResponseEntity<ResponseMessage> getClassesByProgramId(@PathVariable Integer id) {
+        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getClassbyTrainingProgramId(id), "Get classes with training program Id success"));
     }
 }
