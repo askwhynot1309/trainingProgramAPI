@@ -1,5 +1,7 @@
 package com.fams.training.service.Interface;
 
+import com.fams.training.DTO.ClassDTO;
+import com.fams.training.DTO.SyllabusDTO;
 import com.fams.training.entity.TrainingProgram;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +21,8 @@ public interface TrainingService {
     public void activateTrainingProgram(Integer trainingId);
     public TrainingProgram searchTrainingProgram(Integer trainingId);
     Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable);
-    Page<TrainingProgram> filterByStatus(String name, Pageable pageable);
+    public Page<TrainingProgram> getSortedTrainingProgram(String sortBy, String sortOrder, Pageable pageable);
     TrainingProgram duplicateTrainingProgram(Integer id);
-
+    public List<ClassDTO> getClassbyTrainingProgramId(Integer id);
+    public List<SyllabusDTO> getSyllabusByTrainingProgramId(Integer id);
 }

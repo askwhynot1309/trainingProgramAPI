@@ -1,34 +1,53 @@
 package com.fams.training.service.Imp;
 
+import com.fams.training.DTO.ClassDTO;
+import com.fams.training.DTO.PageableDTO;
+import com.fams.training.DTO.ResponseMessage;
+import com.fams.training.DTO.SyllabusDTO;
 import com.fams.training.entity.TrainingProgram;
 import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
 import com.fams.training.repository.TrainingRepository;
 import com.fams.training.service.Interface.TrainingService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TrainingServiceImp implements TrainingService {
     @Autowired
     TrainingRepository trainingRepository;
 
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @Autowired
+    RestTemplate restTemplate;
+
+    @Autowired
+    Properties properties;
+
+    //lấy danh sách đã phân trang của program list
     @Override
     public Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createDate"));
@@ -50,6 +69,8 @@ public class TrainingServiceImp implements TrainingService {
 //        }
 //    }
 
+
+    //import 1 file csv, có duplicate handling
     @Override
     public List<TrainingProgram> importTrainingProgramFromFile(MultipartFile file, InputStream is, String encoding, char columnSeparator, String scanningMethod, String duplicateHandling) {
         try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, encoding));
@@ -200,6 +221,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
+    //tạo mới 1 program
     @Override
     public int createNewTrainingProgram(TrainingProgram trainingProgram) {
         try {
@@ -236,22 +258,29 @@ public class TrainingServiceImp implements TrainingService {
         return trainingRepository.existsById(id);
     }
 
+    //search program bằng id
     @Override
     public TrainingProgram searchTrainingProgram(Integer trainingId) {
         return trainingRepository.findById(trainingId).orElse(null);
     }
 
-
+    //search 1 program sử dụng keyword
     @Override
     public Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable) {
         return trainingRepository.findByNameContaining(name, pageable);
     }
 
+    //sort theo field người dùng input
     @Override
-    public Page<TrainingProgram> filterByStatus(String key, Pageable pageable) {
-        return trainingRepository.findByStatus(key, pageable);
+    public Page<TrainingProgram> getSortedTrainingProgram(String sortBy, String sortOrder, Pageable pageable) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortOrder), sortBy);
+        PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        return trainingRepository.findAll(pageRequest);
     }
 
+
+
+    //x2 1 training program, assign 1 id mới và chuyển status về drafting
     @Override
     public TrainingProgram duplicateTrainingProgram(Integer id) {
         TrainingProgram program = trainingRepository.findById(id).orElse(null);
@@ -270,7 +299,7 @@ public class TrainingServiceImp implements TrainingService {
             duplicateProgram.setStartTime(program.getStartTime());
             duplicateProgram.setTopicId(program.getTopicId());
             duplicateProgram.setDuration(program.getDuration());
-            duplicateProgram.setStatus(program.getStatus());
+            duplicateProgram.setStatus("Drafting");
 
             trainingRepository.save(duplicateProgram);
 
@@ -278,6 +307,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
+    //lấy id mới nhất để assign (id lớn nhất)
     public int getNextTrainingProgramId() {
         List<TrainingProgram> trainingPrograms = trainingRepository.findAllByOrderByTrainingIdDesc();
 
@@ -288,7 +318,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
-
+    //deactivate 1 program, status = inactive
     @Override
     public void deactivateTrainingProgram(Integer trainingId) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
@@ -302,6 +332,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
+    //activate 1 program chuyển status = active
     @Override
     public void activateTrainingProgram(Integer trainingId) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
@@ -315,6 +346,7 @@ public class TrainingServiceImp implements TrainingService {
         }
     }
 
+    //cập nhật thông tin, check status = active ==> tiến hành cập nhật
     public TrainingProgram updateTrainingProgram(Integer trainingId, TrainingProgram updatedProgram) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
 
@@ -344,4 +376,55 @@ public class TrainingServiceImp implements TrainingService {
             throw new EntityNotFoundException("Training program not found. Id not found");
         }
     }
+
+
+    //lấy dữ liệu từ service Class bằng RestTemplate (not finalize yet)
+    @Override
+    public List<ClassDTO> getClassbyTrainingProgramId(Integer id) {
+//      ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity("http://localhost:8801/classList", ResponseMessage.class);
+        ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity(properties.getProperty("class-service-url"), ResponseMessage.class);
+
+        ResponseMessage responseObject = responseEntity.getBody();
+
+        if (responseObject != null && responseObject.getData() != null) {
+            PageableDTO<ClassDTO> pageResponse = objectMapper.convertValue(responseObject.getData(), new TypeReference<PageableDTO<ClassDTO>>() {});
+            return pageResponse.getContent().stream()
+                    .filter(classDTO -> classDTO.getTrainingProgramId().equals(id))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public List<SyllabusDTO> getSyllabusByTrainingProgramId(Integer id) {
+        try {
+            ResponseEntity<List<SyllabusDTO>> responseEntity = restTemplate.exchange(
+                    properties.getProperty("syllabus-service-url"),
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<SyllabusDTO>>() {});
+
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                List<SyllabusDTO> syllabusDTOList = responseEntity.getBody();
+
+                if (syllabusDTOList != null){
+                    return syllabusDTOList.stream()
+                            .filter(SyllabusDTO -> SyllabusDTO.getTraining_id().equals(id))
+                            .collect(Collectors.toList());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Collections.emptyList(); // Return an empty list if there's an error or no data.
+    }
+
+
+
+
+
+
+
 }

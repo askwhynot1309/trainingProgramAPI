@@ -1,7 +1,6 @@
 package com.fams.training.controller;
 
-import com.fams.training.DTO.PageableDTO;
-import com.fams.training.DTO.ResponseMessage;
+import com.fams.training.DTO.*;
 import com.fams.training.entity.TrainingProgram;
 import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
@@ -9,6 +8,7 @@ import com.fams.training.service.Imp.TrainingServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +22,11 @@ public class TrainingController {
     @Autowired
     TrainingServiceImp trainingServiceImp;
 
+    //lấy danh sách đã phân trang của program list
     @GetMapping("/trainingList")
     public ResponseEntity<ResponseMessage> getTrainingProgramList(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "8") int size
     ) {
         try {
             Page<TrainingProgram> list = trainingServiceImp.getAllPagingTrainingProgram(page, size);
@@ -53,8 +54,7 @@ public class TrainingController {
         }
     }
 
-
-
+    //search program bằng id
     @GetMapping("/searchWithId/{trainingId}")
     public ResponseEntity<ResponseMessage> searchTrainingProgram(@PathVariable Integer trainingId) {
         try {
@@ -76,6 +76,24 @@ public class TrainingController {
         }
     }
 
+    @GetMapping("/getProgramDetail/{trainingId}")
+    public ResponseEntity<TrainingProgramDetailDTO> getTrainingProgramDetail(@PathVariable Integer trainingId){
+        try {
+            List<ClassDTO> classList = trainingServiceImp.getClassbyTrainingProgramId(trainingId);
+            List<SyllabusDTO> syllabusList = trainingServiceImp.getSyllabusByTrainingProgramId(trainingId);
+            TrainingProgram trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
+
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    new TrainingProgramDetailDTO(0, trainingProgram, syllabusList, classList, "Success")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new TrainingProgramDetailDTO(1, null, null, null, "Internal server error")
+            );
+        }
+    }
+
+    //deactivate 1 program, status = inactive
     @PostMapping("/deactivate/{trainingId}")
     public ResponseEntity<ResponseMessage> deactivateTrainingProgram(@PathVariable Integer trainingId) {
         try {
@@ -94,6 +112,7 @@ public class TrainingController {
         }
     }
 
+    //activate 1 program chuyển status = active
     @PostMapping("/activate/{trainingId}")
     public ResponseEntity<ResponseMessage> activateTrainingProgram(@PathVariable Integer trainingId) {
         try {
@@ -112,8 +131,7 @@ public class TrainingController {
         }
     }
 
-
-
+    //import 1 file csv, có duplicate handling
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
     public ResponseEntity<ResponseMessage> uploadFile(
             @RequestParam("file") MultipartFile file,
@@ -147,6 +165,7 @@ public class TrainingController {
         }
     }
 
+    //tạo mới 1 program
     @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createNewTrainingProgram(@RequestBody TrainingProgram trainingProgram){
         int id = trainingProgram.getTrainingId();
@@ -202,11 +221,12 @@ public class TrainingController {
 //         );
 //     }
 
+    //search program list theo keyword
     @PostMapping("/searchByMatchingKeywords/{key}")
     public ResponseEntity<ResponseMessage> searchTrainingProgramByKeyword(
             @PathVariable String key,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "8") int size
     ){
         try{
             Page<TrainingProgram> list = trainingServiceImp.searchTrainingProgramWithKeyword(key, PageRequest.of(page, size));
@@ -233,15 +253,16 @@ public class TrainingController {
         }
     }
 
-    @GetMapping("/trainingList/filterByStatus")
-    public ResponseEntity<ResponseMessage> getFilterByStatusTrainingProgram(
-            @RequestParam String status,
+    //sort theo field người dùng input
+    @GetMapping("/trainingList/sort")
+    public ResponseEntity<ResponseMessage> getSortedTrainingProgram(
+            @RequestParam String sortBy,
+            @RequestParam String sortOrder,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "8") int size
     ) {
-
         try {
-            Page<TrainingProgram> list = trainingServiceImp.filterByStatus(status, PageRequest.of(page, size));
+            Page<TrainingProgram> list = trainingServiceImp.getSortedTrainingProgram(sortBy, sortOrder, PageRequest.of(page, size, Sort.Direction.fromString(sortOrder), sortBy));
 
             PageableDTO<TrainingProgram> data = new PageableDTO<>();
             data.setContent(list.getContent());
@@ -266,6 +287,8 @@ public class TrainingController {
         }
     }
 
+
+    //x2 1 training program, assign 1 id mới và chuyển status về drafting
     @PostMapping("/duplicateProgram/{trainingId}")
     public ResponseEntity<ResponseMessage> duplicateTrainingProgram(@PathVariable Integer trainingId){
         TrainingProgram data = trainingServiceImp.duplicateTrainingProgram(trainingId);
@@ -278,5 +301,16 @@ public class TrainingController {
                     new ResponseMessage("0", null, "Duplicate successfully")
             );
         }
+    }
+
+    //lấy dữ liệu từ service Class bằng RestTemplate (not finalized yet)
+    @GetMapping("/classById/{id}")
+    public ResponseEntity<ResponseMessage> getClassesByProgramId(@PathVariable Integer id) {
+        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getClassbyTrainingProgramId(id), "Get classes with training program Id success"));
+    }
+
+    @GetMapping("/syllabusById/{id}")
+    public ResponseEntity<ResponseMessage> getSyllabusByProgramId(@PathVariable Integer id) {
+        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getSyllabusByTrainingProgramId(id), "Get classes with training program Id success"));
     }
 }

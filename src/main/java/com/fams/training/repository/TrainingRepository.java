@@ -14,7 +14,6 @@ import java.util.Optional;
 @Repository
 public interface TrainingRepository extends JpaRepository<TrainingProgram, Integer> {
     Page<TrainingProgram> findByNameContaining(String keyword, Pageable pageable);
-    Page<TrainingProgram> findByStatus(String keyword, Pageable pageable);
     List<TrainingProgram> findAllByOrderByTrainingIdDesc();
     List<TrainingProgram> findByName(String name);
 

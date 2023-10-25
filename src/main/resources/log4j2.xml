@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="log-file-path">logs</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+        </Console>
+
+        <RollingFile name="InfoFile" fileName="${log-file-path}/info.log"
+                     filePattern="${log-file-path}/$${date:yyyy-MM-dd}/info-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+        </RollingFile>
+
+        <RollingFile name="ErrorFile" fileName="${log-file-path}/error.log"
+                     filePattern="${log-file-path}/$${date:yyyy-MM-dd}/error-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="InfoFile" />
+        </Root>
+
+        <Logger name="org.example" level="ERROR">
+            <AppenderRef ref="ErrorFile" />
+        </Logger>
+    </Loggers>
+</Configuration>

@@ -2,7 +2,7 @@ package com.fams.training.controller;
 
 import com.fams.training.DTO.AssignmentDTO;
 import com.fams.training.TrainingManagementApplication;
-import com.fams.training.service.Imp.AssignmentServiceImpl;
+import com.fams.training.service.Imp.AssignmentServiceImp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class AssignmentControllerTest {
     @Mock
-    AssignmentServiceImpl assignmentService;
+    AssignmentServiceImp assignmentService;
 
     @Autowired
     private MockMvc mockMvc;
