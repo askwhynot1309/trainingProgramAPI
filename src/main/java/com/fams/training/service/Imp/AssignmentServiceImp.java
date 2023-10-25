@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AssignmentServiceImpl implements AssignmentService {
+public class AssignmentServiceImp implements AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
     @Override

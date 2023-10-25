@@ -38,17 +38,17 @@ public class ResourceController {
             data.setTotalPages(list.getTotalPages());
             if (list.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                        new ResponseMessage("204", null, "No content found")
+                        new ResponseMessage("1", null, "No content found")
                 );
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", data, "Success")
+                    new ResponseMessage("0", data, "Success")
             );
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("Internal server error", null, "500")
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
     }
@@ -60,11 +60,11 @@ public class ResourceController {
     ) {
         if (resourceService.uploadTrainingMaterial(description, file)) {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", null, "Upload successfully")
+                    new ResponseMessage("0", null, "Upload successfully")
             );
         } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                    new ResponseMessage("204", null, "No file found")
+                    new ResponseMessage("1", null, "No file found")
             );
         }
     }
@@ -107,11 +107,11 @@ public class ResourceController {
         boolean deleted = resourceService.deleteMaterials(resourceId);
         if (deleted) {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("200", null, "Material deleted successfully")
+                    new ResponseMessage("0", null, "Material deleted successfully")
             );
         } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                    new ResponseMessage("204", null, "Failed to delete material")
+                    new ResponseMessage("1", null, "Failed to delete material")
             );
         }
     }
