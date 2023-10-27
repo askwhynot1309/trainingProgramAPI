@@ -44,9 +44,6 @@ public class TrainingServiceImp implements TrainingService {
     @Autowired
     RestTemplate restTemplate;
 
-    @Autowired
-    Properties properties;
-
     //lấy danh sách đã phân trang của program list
     @Override
     public Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size) {
@@ -113,7 +110,7 @@ public class TrainingServiceImp implements TrainingService {
                 Optional<TrainingProgram> existingProgramById = trainingRepository.findById(id);
                 List<TrainingProgram> existingProgramByName = trainingRepository.findByName(name);
 
-                if (existingProgram.isPresent() || !Objects.requireNonNull(existingProgramList).isEmpty() || bothIdAndNameCheck) {
+                if (existingProgram.isPresent() || existingProgramList != null || bothIdAndNameCheck) {
                     if (duplicateHandling.equalsIgnoreCase("allow")) {
                         int newId = getNextTrainingProgramId();
 
@@ -217,6 +214,7 @@ public class TrainingServiceImp implements TrainingService {
             }
             return trainingProgramList;
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException("fail to parse CSV file: " + e.getMessage());
         }
     }
@@ -225,9 +223,17 @@ public class TrainingServiceImp implements TrainingService {
     @Override
     public int createNewTrainingProgram(TrainingProgram trainingProgram) {
         try {
-            trainingRepository.save(trainingProgram);
-            return 1;
+            int id = getNextTrainingProgramId();
+            trainingProgram.setTrainingId(id);
+            trainingProgram.setStatus("Inactive");
+            TrainingProgram savedTrainingProgram = trainingRepository.save(trainingProgram);
+            if (savedTrainingProgram != null) {
+                return 1;
+            } else {
+                return 0;
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             return 0;
         }
     }
@@ -382,7 +388,7 @@ public class TrainingServiceImp implements TrainingService {
     @Override
     public List<ClassDTO> getClassbyTrainingProgramId(Integer id) {
 //      ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity("http://localhost:8801/classList", ResponseMessage.class);
-        ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity(properties.getProperty("class-service-url"), ResponseMessage.class);
+        ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity("http://localhost:8801/classList", ResponseMessage.class);
 
         ResponseMessage responseObject = responseEntity.getBody();
 
@@ -400,7 +406,7 @@ public class TrainingServiceImp implements TrainingService {
     public List<SyllabusDTO> getSyllabusByTrainingProgramId(Integer id) {
         try {
             ResponseEntity<List<SyllabusDTO>> responseEntity = restTemplate.exchange(
-                    properties.getProperty("syllabus-service-url"),
+                    "http://localhost:8802/syllabus/list",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<List<SyllabusDTO>>() {});

@@ -168,21 +168,27 @@ public class TrainingController {
     //tạo mới 1 program
     @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createNewTrainingProgram(@RequestBody TrainingProgram trainingProgram){
-        int id = trainingProgram.getTrainingId();
-
-        if (trainingServiceImp.existsTrainingProgramById(id)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                    new ResponseMessage("1", null, "Duplicate ID")
+        try {
+//            int id = trainingProgram.getTrainingId();
+//
+//            if (trainingServiceImp.existsTrainingProgramById(id)) {
+//                return ResponseEntity.status(HttpStatus.CONFLICT).body(
+//                        new ResponseMessage("1", null, "Duplicate ID")
+//                );
+//            }
+            int check = trainingServiceImp.createNewTrainingProgram(trainingProgram);
+            if (check > 0){
+                return ResponseEntity.status(HttpStatus.OK).body(
+                        new ResponseMessage("0", trainingProgram, "Success")
+                );
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ResponseMessage("1", null, "Internal server error")
             );
         }
-        int check = trainingServiceImp.createNewTrainingProgram(trainingProgram);
-        if (check > 0){
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", trainingProgram, "Success")
-            );
-        }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ResponseMessage("1", null, "Failed")
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ResponseMessage("1", null, "Create failed")
         );
     }
 

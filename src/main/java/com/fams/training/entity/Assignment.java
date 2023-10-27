@@ -35,7 +35,6 @@ public class Assignment {
     @Column(name = "score", nullable = false)
     private int score;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainingId")
     @JsonIgnore

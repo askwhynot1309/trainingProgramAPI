@@ -17,12 +17,12 @@ public class TrainingProgramConfig {
         return new RestTemplate();
     }
 
-    @Bean
-    public Properties properties() throws IOException {
-        File file = new File("src/main/resources/training-program-management.properties");
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(file));
-
-        return properties;
-    }
+//    @Bean
+//    public Properties properties() throws IOException {
+//        File file = new File("src/main/resources/training-program-management.properties");
+//        Properties properties = new Properties();
+//        properties.load(new FileInputStream(file));
+//
+//        return properties;
+//    }
 }

@@ -20,42 +20,40 @@ import java.util.List;
 @Table(name = "trainingProgram")
 public class TrainingProgram {
     @Id
-    @Column(name = "trainingId", nullable = false, length = 500)
+    @Column(name = "trainingId",   length = 500)
     private Integer trainingId;
 
-    @Length(max = 45)
     @OneToMany(mappedBy = "trainingProgram", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Assignment> assignment = new ArrayList<>();
 
-    @Length(max = 45)
     @OneToMany(mappedBy = "trainingProgram", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Resource> resources = new ArrayList<>();
 
-    @Column(name = "name", nullable = false, length = 500)
+    @Column(name = "name", length = 500)
     private String name;
 
-    @Column(name = "createBy", nullable = false, length = 500)
+    @Column(name = "createBy", length = 500)
     private String createBy;
 
-    @Column(name = "createDate", nullable = false)
+    @Column(name = "createDate")
     private LocalDate createDate;
 
-    @Column(name = "modifyBy", nullable = false, length = 500)
+    @Column(name = "modifyBy", length = 500)
     private String modifyBy;
 
-    @Column(name = "modifyDate", nullable = false)
+    @Column(name = "modifyDate")
     private LocalDate modifyDate;
 
-    @Column(name = "startTime", nullable = false)
+    @Column(name = "startTime")
     private LocalDate startTime;
 
-    @Column(name = "duration", nullable = false)
+    @Column(name = "duration")
     private String duration;
 
-    @Column(name = "topicId", nullable = false, length = 500)
+    @Column(name = "topicId", length = 500)
     private String topicId;
 
-    @Column(name = "status", nullable = false, length = 500)
+    @Column(name = "status", length = 500)
     private String status;
 
 
