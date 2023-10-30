@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,4 +172,73 @@ public class ResourceServiceImpTest {
         }
         return resources;
     }
+
+
+    @Test
+    public void testUploadTrainingMaterial_ExceptionCaught() {
+        String description = "Test Resource";
+        MockMultipartFile fileWithException = new MockMultipartFile("file", "testfile.pdf", "application/pdf", "Test PDF Content".getBytes());
+
+        fileWithException = null;
+
+        boolean result = resourceService.uploadTrainingMaterial(description, fileWithException);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUploadTrainingMaterialCatchIOException() throws IOException {
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        ResourceServiceImp resourceService = new ResourceServiceImp(resourceRepository);
+
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getSize()).thenReturn(100L); // Set a file size that will cause an IOException
+        when(file.getOriginalFilename()).thenReturn("test.jpg");
+        when(file.getBytes()).thenThrow(new IOException()); // Simulate IOException
+
+        boolean result = resourceService.uploadTrainingMaterial("Description", file);
+
+        assertFalse(result);
+    }
+
+
+    @Test
+    public void testDownloadTrainingMaterialCatch() {
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        ResourceServiceImp resourceService = new ResourceServiceImp(resourceRepository);
+
+        int resourceId = 1;
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.empty());
+
+        byte[] data = resourceService.downloadTrainingMaterial(resourceId);
+
+        assertNull(data);
+    }
+
+    @Test
+    public void testDownloadTrainingProgramTemplateCatch() {
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        ResourceServiceImp resourceService = new ResourceServiceImp(resourceRepository);
+
+        String title = "Training program template";
+        when(resourceRepository.findByTitle(title)).thenReturn(null);
+
+        byte[] data = resourceService.downloadTrainingProgramTemplate(title);
+
+        assertNull(data);
+    }
+
+    @Test
+    public void testDeleteMaterialsCatch() {
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        ResourceServiceImp resourceService = new ResourceServiceImp(resourceRepository);
+
+        int resourceId = 1;
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.empty());
+
+        boolean result = resourceService.deleteMaterials(resourceId);
+
+        assertFalse(result);
+    }
+
 }

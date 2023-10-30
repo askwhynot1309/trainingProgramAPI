@@ -2,7 +2,6 @@ package com.fams.training.controller;
 
 import com.fams.training.DTO.*;
 import com.fams.training.entity.TrainingProgram;
-import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
 import com.fams.training.service.Imp.TrainingServiceImp;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,69 +28,89 @@ public class TrainingController {
             @RequestParam(defaultValue = "8") int size
     ) {
         try {
-            Page<TrainingProgram> list = trainingServiceImp.getAllPagingTrainingProgram(page, size);
+            Page<TrainingProgramDTO> list = trainingServiceImp.getAllPagingTrainingProgram(page, size);
 
-            PageableDTO<TrainingProgram> data = new PageableDTO<>();
-            data.setContent(list.getContent());
-            data.setPageNumber(list.getNumber());
-            data.setPageSize(list.getSize());
-            data.setTotalElements(list.getTotalElements());
-            data.setTotalPages(list.getTotalPages());
+            PageableDTO<TrainingProgramDTO> data = getData(list);
             if (list.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                        new ResponseMessage("1", null, "No content found")
+                        new ResponseMessage(HttpStatus.NO_CONTENT.value(), null, Message.NO_CONTENT)
                 );
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", data, "Success")
+                    new ResponseMessage(HttpStatus.OK.value(), data, Message.SUCCESS)
             );
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("Internal server error", null, "500")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
+    }
+
+    private PageableDTO<TrainingProgramDTO> getData(Page<TrainingProgramDTO> list) {
+        PageableDTO<TrainingProgramDTO> data = new PageableDTO<>();
+        data.setContent(list.getContent());
+        data.setPageNumber(list.getNumber());
+        data.setPageSize(list.getSize());
+        data.setTotalElements(list.getTotalElements());
+        data.setTotalPages(list.getTotalPages());
+        return data;
     }
 
     //search program bằng id
     @GetMapping("/searchWithId/{trainingId}")
     public ResponseEntity<ResponseMessage> searchTrainingProgram(@PathVariable Integer trainingId) {
         try {
-            TrainingProgram trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
+            TrainingProgramDTO trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
 
             if (trainingProgram != null) {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("0", trainingProgram, "Success")
+                        new ResponseMessage(HttpStatus.OK.value(), trainingProgram, Message.SUCCESS)
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("1", null, "Training program not found")
+                        new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
                 );
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
 
-    @GetMapping("/getProgramDetail/{trainingId}")
-    public ResponseEntity<TrainingProgramDetailDTO> getTrainingProgramDetail(@PathVariable Integer trainingId){
+    @GetMapping("/searchByIdForRestTemplate/{trainingId}")
+    public ResponseEntity<TrainingProgramDTO> searchTrainingProgramByIdForRestTemplate(@PathVariable Integer trainingId) {
         try {
-            List<ClassDTO> classList = trainingServiceImp.getClassbyTrainingProgramId(trainingId);
-            List<SyllabusDTO> syllabusList = trainingServiceImp.getSyllabusByTrainingProgramId(trainingId);
-            TrainingProgram trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
+            TrainingProgramDTO trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
 
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new TrainingProgramDetailDTO(0, trainingProgram, syllabusList, classList, "Success")
-            );
+            if (trainingProgram != null) {
+                return ResponseEntity.status(HttpStatus.OK).body(trainingProgram);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new TrainingProgramDetailDTO(1, null, null, null, "Internal server error")
-            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+//    @GetMapping("/getProgramDetail/{trainingId}")
+//    public ResponseEntity<TrainingProgramDetailDTO> getTrainingProgramDetail(@PathVariable Integer trainingId){
+//        try {
+//            List<ClassDTO> classList = trainingServiceImp.getClassbyTrainingProgramId(trainingId);
+//            List<SyllabusDTO> syllabusList = trainingServiceImp.getSyllabusByTrainingProgramId(trainingId);
+//            TrainingProgramDTO trainingProgram = trainingServiceImp.searchTrainingProgram(trainingId);
+//
+//            return ResponseEntity.status(HttpStatus.OK).body(
+//                    new TrainingProgramDetailDTO(0, trainingProgram, syllabusList, classList, "Success")
+//            );
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+//                    new TrainingProgramDetailDTO(1, null, null, null, "Internal server error")
+//            );
+//        }
+//    }
 
     //deactivate 1 program, status = inactive
     @PostMapping("/deactivate/{trainingId}")
@@ -99,15 +118,15 @@ public class TrainingController {
         try {
             trainingServiceImp.deactivateTrainingProgram(trainingId);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", null, "Training program deactivated successfully")
+                    new ResponseMessage(HttpStatus.OK.value(), null, Message.DEACTIVATED_SUCCESSFUL)
             );
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("1", null, "Training program not found")
+                    new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -118,15 +137,15 @@ public class TrainingController {
         try {
             trainingServiceImp.activateTrainingProgram(trainingId);
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", null, "Training program activated successfully")
+                    new ResponseMessage(HttpStatus.OK.value(), null, Message.ACTIVATED_SUCCESSFUL)
             );
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("1", null, "Training program not found")
+                    new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -140,78 +159,71 @@ public class TrainingController {
             @RequestParam("scanningMethod") String scanningMethod,
             @RequestParam("duplicateHandling") String duplicateHandling
     ) {
-        String message = "";
-        String code;
+        String message;
         try {
             if (TrainingServiceImp.hasCSVFormat(file)) {
                 trainingServiceImp.importTrainingProgramFromFile(file, file.getInputStream(), encoding, columnSeparator, scanningMethod, duplicateHandling);
-                code = "0";
                 List<TrainingProgram> data = trainingServiceImp.getAllTrainingProgram();
-                message = "Uploaded the file successfully: " + file.getOriginalFilename();
-                return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(code, data, message));
+                message = Message.SUCCESS + file.getOriginalFilename();
+                return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(HttpStatus.OK.value(), data, message));
             } else {
-                code = "1";
-                message = "Invalid file format: " + file.getOriginalFilename();
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(code, null, message));
+                message = Message.INVALID_FILE + file.getOriginalFilename();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(HttpStatus.BAD_REQUEST.value(), null, message));
             }
-        } catch (DuplicateRecordException e) {
-            code = "1";
-            message = e.getMessage();
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ResponseMessage(code, null, message));
         } catch (Exception e) {
-            code = "1";
-            message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ResponseMessage(code, null, message));
+            message = Message.CANT_UPLOAD + file.getOriginalFilename() + "!";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, message));
         }
     }
 
     //tạo mới 1 program
     @PostMapping("/create")
-    public ResponseEntity<ResponseMessage> createNewTrainingProgram(@RequestBody TrainingProgram trainingProgram){
+    public ResponseEntity<ResponseMessage> createNewTrainingProgram(@RequestBody TrainingProgramDTO trainingProgram){
         try {
-//            int id = trainingProgram.getTrainingId();
-//
-//            if (trainingServiceImp.existsTrainingProgramById(id)) {
-//                return ResponseEntity.status(HttpStatus.CONFLICT).body(
-//                        new ResponseMessage("1", null, "Duplicate ID")
-//                );
-//            }
+            if (trainingProgram == null)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                        new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
+                );
+
             int check = trainingServiceImp.createNewTrainingProgram(trainingProgram);
             if (check > 0){
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("0", trainingProgram, "Success")
+                        new ResponseMessage(HttpStatus.OK.value(), trainingProgram, Message.CREATE_SUCCESSFUL)
                 );
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                new ResponseMessage("1", null, "Create failed")
+                new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
         );
     }
 
     @PutMapping("/update/{trainingId}")
-    public ResponseEntity<ResponseMessage> updateTrainingProgram(@PathVariable Integer trainingId, @RequestBody TrainingProgram updatedProgram) {
+    public ResponseEntity<ResponseMessage> updateTrainingProgram(@PathVariable Integer trainingId, @RequestBody TrainingProgramDTO updatedProgram) {
         try {
             TrainingProgram data = trainingServiceImp.updateTrainingProgram(trainingId, updatedProgram);
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", data, "Training program updated successfully")
-            );
+            if (data != null){
+                return ResponseEntity.status(HttpStatus.OK).body(
+                        new ResponseMessage(HttpStatus.OK.value(), null, Message.UPDATE_SUCCESSFUL)
+                );
+            }
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("1", null, "Training program not found. Id not found")
+                    new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
             );
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ResponseMessage("1", null, e.getMessage())
+                    new ResponseMessage(HttpStatus.BAD_REQUEST.value(), null, e.getMessage())
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
+        return null;
     }
 
 //     @DeleteMapping("/delete/{id}")
@@ -235,26 +247,21 @@ public class TrainingController {
             @RequestParam(defaultValue = "8") int size
     ){
         try{
-            Page<TrainingProgram> list = trainingServiceImp.searchTrainingProgramWithKeyword(key, PageRequest.of(page, size));
+            Page<TrainingProgramDTO> list = trainingServiceImp.searchTrainingProgramWithKeyword(key, PageRequest.of(page, size));
 
-            PageableDTO<TrainingProgram> data = new PageableDTO<>();
-            data.setContent(list.getContent());
-            data.setPageNumber(list.getNumber());
-            data.setPageSize(list.getSize());
-            data.setTotalElements(list.getTotalElements());
-            data.setTotalPages(list.getTotalPages());
+            PageableDTO<TrainingProgramDTO> data = getData(list);
             if (list.isEmpty()){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("1", null, "Record not found")
+                        new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("0", data, "Success")
+                        new ResponseMessage(HttpStatus.OK.value(), data, Message.SUCCESS)
                 );
             }
         } catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -279,16 +286,16 @@ public class TrainingController {
 
             if (list.isEmpty()){
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ResponseMessage("1", null, "Record not found")
+                        new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
                 );
             } else {
                 return ResponseEntity.status(HttpStatus.OK).body(
-                        new ResponseMessage("0", data, "Success")
+                        new ResponseMessage(HttpStatus.OK.value(), data, Message.SUCCESS)
                 );
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -300,23 +307,23 @@ public class TrainingController {
         TrainingProgram data = trainingServiceImp.duplicateTrainingProgram(trainingId);
         if (data == null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ResponseMessage("1", null, "Program not found to duplicate")
+                    new ResponseMessage(HttpStatus.NOT_FOUND.value(), null, Message.NOT_FOUND)
             );
         } else {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", null, "Duplicate successfully")
+                    new ResponseMessage(HttpStatus.OK.value(), null, Message.SUCCESS)
             );
         }
     }
 
     //lấy dữ liệu từ service Class bằng RestTemplate (not finalized yet)
-    @GetMapping("/classById/{id}")
-    public ResponseEntity<ResponseMessage> getClassesByProgramId(@PathVariable Integer id) {
-        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getClassbyTrainingProgramId(id), "Get classes with training program Id success"));
-    }
-
-    @GetMapping("/syllabusById/{id}")
-    public ResponseEntity<ResponseMessage> getSyllabusByProgramId(@PathVariable Integer id) {
-        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getSyllabusByTrainingProgramId(id), "Get classes with training program Id success"));
-    }
+//    @GetMapping("/classById/{id}")
+//    public ResponseEntity<ResponseMessage> getClassesByProgramId(@PathVariable Integer id) {
+//        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getClassbyTrainingProgramId(id), "Get classes with training program Id success"));
+//    }
+//
+//    @GetMapping("/syllabusById/{id}")
+//    public ResponseEntity<ResponseMessage> getSyllabusByProgramId(@PathVariable Integer id) {
+//        return ResponseEntity.ok(new ResponseMessage("0", trainingServiceImp.getSyllabusByTrainingProgramId(id), "Get classes with training program Id success"));
+//    }
 }

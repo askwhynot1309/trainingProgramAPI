@@ -1,13 +1,12 @@
 package com.fams.training.service.Imp;
 
-import com.fams.training.DTO.ClassDTO;
-import com.fams.training.DTO.PageableDTO;
-import com.fams.training.DTO.ResponseMessage;
-import com.fams.training.DTO.SyllabusDTO;
+import com.fams.training.DTO.*;
 import com.fams.training.entity.TrainingProgram;
+import com.fams.training.entity.TrainingSyllabus;
 import com.fams.training.exception.DuplicateRecordException;
 import com.fams.training.exception.EntityNotFoundException;
 import com.fams.training.repository.TrainingRepository;
+import com.fams.training.repository.TrainingSyllabusRepository;
 import com.fams.training.service.Interface.TrainingService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +38,9 @@ public class TrainingServiceImp implements TrainingService {
     TrainingRepository trainingRepository;
 
     @Autowired
+    TrainingSyllabusRepository trainingSyllabusRepository;
+
+    @Autowired
     ObjectMapper objectMapper;
 
     @Autowired
@@ -46,9 +48,25 @@ public class TrainingServiceImp implements TrainingService {
 
     //lấy danh sách đã phân trang của program list
     @Override
-    public Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size) {
+    public Page<TrainingProgramDTO> getAllPagingTrainingProgram(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createDate"));
-        return trainingRepository.findAll(pageable);
+        Page<TrainingProgram> trainingProgramPage = trainingRepository.findAll(pageable);
+        return trainingProgramPage.map(this::mapToDTO);
+    }
+
+    public TrainingProgramDTO mapToDTO(TrainingProgram trainingProgram){
+        return TrainingProgramDTO.builder()
+                .id(trainingProgram.getTrainingId())
+                .name(trainingProgram.getName())
+                .createBy(trainingProgram.getCreateBy())
+                .createDate(trainingProgram.getCreateDate())
+                .modifyBy(trainingProgram.getModifyBy())
+                .modifyDate(trainingProgram.getModifyDate())
+                .startTime(trainingProgram.getStartTime())
+                .duration(trainingProgram.getDuration())
+                .topicId(trainingProgram.getTopicId())
+                .status(trainingProgram.getStatus())
+                .build();
     }
 
     @Override
@@ -221,21 +239,46 @@ public class TrainingServiceImp implements TrainingService {
 
     //tạo mới 1 program
     @Override
-    public int createNewTrainingProgram(TrainingProgram trainingProgram) {
+    public int createNewTrainingProgram(TrainingProgramDTO trainingProgramRequestBody) {
+        trainingProgramRequestBody.setId(getNextTrainingProgramId());
+        trainingProgramRequestBody.setCreateDate(LocalDate.now());
+        trainingProgramRequestBody.setStatus("Inactive");
+
         try {
-            int id = getNextTrainingProgramId();
-            trainingProgram.setTrainingId(id);
-            trainingProgram.setStatus("Inactive");
+            TrainingProgram trainingProgram = mapToEntity(trainingProgramRequestBody);
+
             TrainingProgram savedTrainingProgram = trainingRepository.save(trainingProgram);
-            if (savedTrainingProgram != null) {
-                return 1;
-            } else {
-                return 0;
-            }
+
+            trainingProgramRequestBody.getSyllabusRequestList().stream()
+                    .forEach(syllabusRequest -> {
+                        TrainingSyllabus trainingSyllabus = TrainingSyllabus.builder()
+                                .orderNumber(syllabusRequest.getOrder())
+                                .syllabusId(syllabusRequest.getSyllabusId())
+                                .trainingProgram(trainingProgram)
+                                .build();
+
+                        trainingSyllabusRepository.save(trainingSyllabus);
+                    });
+            return 1;
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    private TrainingProgram mapToEntity(TrainingProgramDTO trainingProgramDto) {
+        return TrainingProgram.builder()
+                .trainingId(trainingProgramDto.getId())
+                .name(trainingProgramDto.getName())
+                .createBy(trainingProgramDto.getCreateBy())
+                .createDate(trainingProgramDto.getCreateDate())
+                .modifyBy(trainingProgramDto.getModifyBy())
+                .modifyDate(trainingProgramDto.getModifyDate())
+                .startTime(trainingProgramDto.getStartTime())
+                .duration(trainingProgramDto.getDuration())
+                .topicId(trainingProgramDto.getTopicId())
+                .status(trainingProgramDto.getStatus())
+                .build();
     }
 
     @Override
@@ -266,14 +309,20 @@ public class TrainingServiceImp implements TrainingService {
 
     //search program bằng id
     @Override
-    public TrainingProgram searchTrainingProgram(Integer trainingId) {
-        return trainingRepository.findById(trainingId).orElse(null);
+    public TrainingProgramDTO searchTrainingProgram(Integer trainingId) {
+        TrainingProgram trainingProgram = trainingRepository.findById(trainingId).orElse(null);
+
+        if (trainingProgram != null) {
+            return mapToDTO(trainingProgram);
+        }
+        return null;
     }
 
     //search 1 program sử dụng keyword
     @Override
-    public Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable) {
-        return trainingRepository.findByNameContaining(name, pageable);
+    public Page<TrainingProgramDTO> searchTrainingProgramWithKeyword(String name, Pageable pageable) {
+        Page<TrainingProgram> trainingProgramPage = trainingRepository.findByNameContaining(name, pageable);
+            return trainingProgramPage.map(this::mapToDTO);
     }
 
     //sort theo field người dùng input
@@ -353,7 +402,7 @@ public class TrainingServiceImp implements TrainingService {
     }
 
     //cập nhật thông tin, check status = active ==> tiến hành cập nhật
-    public TrainingProgram updateTrainingProgram(Integer trainingId, TrainingProgram updatedProgram) {
+    public TrainingProgram updateTrainingProgram(Integer trainingId, TrainingProgramDTO updatedProgram) {
         Optional<TrainingProgram> optionalTrainingProgram = trainingRepository.findById(trainingId);
 
         if (optionalTrainingProgram.isPresent()) {
@@ -368,13 +417,25 @@ public class TrainingServiceImp implements TrainingService {
             }
 
             trainingProgram.setName(updatedProgram.getName());
-            trainingProgram.setCreateDate(updatedProgram.getCreateDate());
             trainingProgram.setCreateBy(updatedProgram.getCreateBy());
             trainingProgram.setDuration(updatedProgram.getDuration());
             trainingProgram.setModifyBy(updatedProgram.getModifyBy());
             trainingProgram.setTopicId(updatedProgram.getTopicId());
             trainingProgram.setStartTime(updatedProgram.getStartTime());
             trainingProgram.setModifyDate(currentDate);
+
+            trainingSyllabusRepository.deleteByTrainingProgram(trainingProgram);
+
+            updatedProgram.getSyllabusRequestList().stream()
+                    .forEach(syllabusRequest -> {
+                        TrainingSyllabus trainingSyllabus = TrainingSyllabus.builder()
+                                .orderNumber(syllabusRequest.getOrder())
+                                .syllabusId(syllabusRequest.getSyllabusId())
+                                .trainingProgram(trainingProgram)
+                                .build();
+
+                        trainingSyllabusRepository.save(trainingSyllabus);
+                    });
 
 
             return trainingRepository.save(trainingProgram);
@@ -384,7 +445,6 @@ public class TrainingServiceImp implements TrainingService {
     }
 
 
-    //lấy dữ liệu từ service Class bằng RestTemplate (not finalize yet)
     @Override
     public List<ClassDTO> getClassbyTrainingProgramId(Integer id) {
 //      ResponseEntity<ResponseMessage> responseEntity = restTemplate.getForEntity("http://localhost:8801/classList", ResponseMessage.class);

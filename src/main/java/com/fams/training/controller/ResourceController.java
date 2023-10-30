@@ -1,5 +1,6 @@
 package com.fams.training.controller;
 
+import com.fams.training.DTO.Message;
 import com.fams.training.DTO.PageableDTO;
 import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.entity.Resource;
@@ -38,17 +39,17 @@ public class ResourceController {
             data.setTotalPages(list.getTotalPages());
             if (list.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                        new ResponseMessage("1", null, "No content found")
+                        new ResponseMessage(HttpStatus.NO_CONTENT.value(), null, Message.NO_CONTENT)
                 );
             }
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", data, "Success")
+                    new ResponseMessage(HttpStatus.OK.value(), data, Message.SUCCESS)
             );
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ResponseMessage("1", null, "Internal server error")
+                    new ResponseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, Message.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -60,11 +61,11 @@ public class ResourceController {
     ) {
         if (resourceService.uploadTrainingMaterial(description, file)) {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", null, "Upload successfully")
+                    new ResponseMessage(HttpStatus.OK.value(), null, Message.SUCCESS)
             );
         } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                    new ResponseMessage("1", null, "No file found")
+                    new ResponseMessage(HttpStatus.NO_CONTENT.value(), null, Message.NO_CONTENT)
             );
         }
     }
@@ -107,11 +108,11 @@ public class ResourceController {
         boolean deleted = resourceService.deleteMaterials(resourceId);
         if (deleted) {
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ResponseMessage("0", null, "Material deleted successfully")
+                    new ResponseMessage(HttpStatus.OK.value(), null, Message.SUCCESS)
             );
         } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(
-                    new ResponseMessage("1", null, "Failed to delete material")
+                    new ResponseMessage(HttpStatus.NO_CONTENT.value(), null, Message.NO_CONTENT)
             );
         }
     }

@@ -22,13 +22,11 @@ import java.util.Set;
 public class ResourceServiceImp implements ResourceService {
 
     private final ResourceRepository resourceRepository;
-    //set cai nay o ngoai
+
     private static final long MAX_FILE_SIZE = 25 * 1024 * 1024;
 
-    //set lam sao de biet duoc dinh dang cua file
-    private static final Set<String> ALLOWED_EXTENSIONS =
-            new HashSet<>(Set.of("jpg", "jpeg", "png", "pdf", "ppt", "video",
-                    "xls", "csv", "pptx", "txt", "docx"));
+
+
 
     @Override
     public Page<Resource> getAllResource(int page, int size) {
@@ -40,16 +38,17 @@ public class ResourceServiceImp implements ResourceService {
     @Override
     public boolean uploadTrainingMaterial( String description, MultipartFile file) {
         try {
+            if (file == null) {
+                return false;
+            }
             if (file.getSize() > MAX_FILE_SIZE) {
                 return false;
             }
 
             String originalFilename = file.getOriginalFilename();
             String fileExtension = StringUtils.getFilenameExtension(originalFilename).toLowerCase();
+            fileExtension = fileExtension != null ? fileExtension.toLowerCase() : "";
 
-            if (!ALLOWED_EXTENSIONS.contains(fileExtension)) {
-                return false;
-            }
 
             byte[] data = file.getBytes();
 
@@ -60,6 +59,7 @@ public class ResourceServiceImp implements ResourceService {
                     .data(data)
                     .uploadDateTime(LocalDateTime.now())
                     .status("Active")
+                    .typeFile(fileExtension)
                     .build();
 
             resourceRepository.save(resource);

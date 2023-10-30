@@ -2,6 +2,7 @@ package com.fams.training.service.Interface;
 
 import com.fams.training.DTO.ClassDTO;
 import com.fams.training.DTO.SyllabusDTO;
+import com.fams.training.DTO.TrainingProgramDTO;
 import com.fams.training.entity.TrainingProgram;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,16 +12,16 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface TrainingService {
-    Page<TrainingProgram> getAllPagingTrainingProgram(int page, int size);
+    Page<TrainingProgramDTO> getAllPagingTrainingProgram(int page, int size);
     List<TrainingProgram> getAllTrainingProgram();
 //    public void importFile(MultipartFile file, String encoding, char columnSeparator, String scanningMethod, String duplicateHandling);
     public List<TrainingProgram> importTrainingProgramFromFile(MultipartFile file, InputStream is, String encoding,char columnSeparator, String scanningMethod, String duplicateHandling);
-    int createNewTrainingProgram(TrainingProgram trainingProgram);
+    int createNewTrainingProgram(TrainingProgramDTO trainingProgram);
     int deleteTrainingProgram(Integer id);
     public void deactivateTrainingProgram(Integer trainingId);
     public void activateTrainingProgram(Integer trainingId);
-    public TrainingProgram searchTrainingProgram(Integer trainingId);
-    Page<TrainingProgram> searchTrainingProgramWithKeyword(String name, Pageable pageable);
+    public TrainingProgramDTO searchTrainingProgram(Integer trainingId);
+    Page<TrainingProgramDTO> searchTrainingProgramWithKeyword(String name, Pageable pageable);
     public Page<TrainingProgram> getSortedTrainingProgram(String sortBy, String sortOrder, Pageable pageable);
     TrainingProgram duplicateTrainingProgram(Integer id);
     public List<ClassDTO> getClassbyTrainingProgramId(Integer id);

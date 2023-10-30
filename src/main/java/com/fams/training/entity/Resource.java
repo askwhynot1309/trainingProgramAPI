@@ -36,6 +36,9 @@ public class Resource {
     @Column(name = "uploadedBy", length = 500, nullable = true)
     private String uploadedBy;
 
+    @Column(name ="typeFile", length = 500)
+    private  String typeFile;
+
     @Column(name = "uploadDateTime")
     private LocalDateTime uploadDateTime;
 

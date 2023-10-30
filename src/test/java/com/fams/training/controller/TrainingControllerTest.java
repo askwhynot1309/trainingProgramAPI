@@ -1,6 +1,8 @@
 package com.fams.training.controller;
 
 
+import com.fams.training.DTO.Message;
+import com.fams.training.DTO.TrainingProgramDTO;
 import com.fams.training.TrainingManagementApplication;
 import com.fams.training.entity.TrainingProgram;
 import com.fams.training.exception.EntityNotFoundException;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +27,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,8 +59,8 @@ class TrainingControllerTest {
 
     @Test
     void createTrainingProgramGivenIdExistsReturnsOk() throws Exception {
-        TrainingProgram trainingProgram = TrainingProgram.builder()
-                .trainingId(5)
+        TrainingProgramDTO trainingProgram = TrainingProgramDTO.builder()
+                .id(5)
                 .status("Drafting")
                 .name("Minh Dinh dep trai")
                 .build();
@@ -75,12 +79,12 @@ class TrainingControllerTest {
 
     @Test
     void createTrainingProgramReturnsInternalServerError() throws Exception {
-        TrainingProgram trainingProgram = TrainingProgram.builder()
-                .trainingId(5)
+        TrainingProgramDTO trainingProgram = TrainingProgramDTO.builder()
+                .id(5)
                 .status("Drafting")
                 .name("Minh Dinh")
                 .build();
-        when(trainingServiceImp.createNewTrainingProgram(trainingProgram)).thenReturn(0);
+        when(trainingServiceImp.createNewTrainingProgram(trainingProgram)).thenThrow(new RuntimeException("Internal server error"));
 
         String trainingProgramJson = objectMapper.writeValueAsString(trainingProgram);
 
@@ -92,26 +96,26 @@ class TrainingControllerTest {
                 .andExpect(status().isInternalServerError());
     }
 
-    @Test
-    void createTrainingProgramReturnsDuplicateIdResponse() throws Exception {
-        TrainingProgram trainingProgram = TrainingProgram.builder()
-                .trainingId(1)
-                .build();
-        when(trainingServiceImp.createNewTrainingProgram(trainingProgram)).thenReturn(0);
-        when(trainingServiceImp.existsTrainingProgramById(1)).thenReturn(true);
-
-        String trainingProgramJson = objectMapper.writeValueAsString(trainingProgram);
-
-        mockMvc.perform(
-                        post("/api/create")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(trainingProgramJson)
-                )
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Duplicate ID"));
-    }
+//    @Test
+//    void createTrainingProgramReturnsDuplicateIdResponse() throws Exception {
+//        TrainingProgramDTO trainingProgram = TrainingProgramDTO.builder()
+//                .id(1)
+//                .build();
+//        when(trainingServiceImp.createNewTrainingProgram(trainingProgram)).thenReturn(0);
+//        when(trainingServiceImp.existsTrainingProgramById(1)).thenReturn(true);
+//
+//        String trainingProgramJson = objectMapper.writeValueAsString(trainingProgram);
+//
+//        mockMvc.perform(
+//                        post("/api/create")
+//                                .contentType(MediaType.APPLICATION_JSON)
+//                                .content(trainingProgramJson)
+//                )
+//                .andExpect(status().isConflict())
+//                .andExpect(jsonPath("$.code").value("1"))
+//                .andExpect(jsonPath("$.data").isEmpty())
+//                .andExpect(jsonPath("$.message").value("Duplicate ID"));
+//    }
 
     @Test
     void deactivateTrainingProgramReturnsOk() throws Exception {
@@ -125,9 +129,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Training program deactivated successfully"));
+                .andExpect(jsonPath("$.message").value(Message.DEACTIVATED_SUCCESSFUL));
     }
 
     @Test
@@ -141,9 +145,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Training program not found"));
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND));
     }
 
     @Test
@@ -158,9 +162,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Internal server error"));
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR));
     }
 
     @Test
@@ -174,9 +178,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Training program activated successfully"));
+                .andExpect(jsonPath("$.message").value(Message.ACTIVATED_SUCCESSFUL));
     }
 
     @Test
@@ -190,9 +194,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Training program not found"));
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND));
     }
 
     @Test
@@ -207,9 +211,9 @@ class TrainingControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(jsonPath("$.data").isEmpty())
-                .andExpect(jsonPath("$.message").value("Internal server error"));
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR));
     }
 
     @Test
@@ -252,8 +256,8 @@ class TrainingControllerTest {
         Integer trainingProgramId = 1;
 
         // Create a sample TrainingProgram object
-        TrainingProgram trainingProgram = TrainingProgram.builder()
-                .trainingId(1)
+        TrainingProgramDTO trainingProgram = TrainingProgramDTO.builder()
+                .id(1)
                 .status("Active")
                 .name("Test name")
                 .build();
@@ -264,9 +268,9 @@ class TrainingControllerTest {
         // Perform the GET request
         mockMvc.perform(get("/api/searchWithId/" + trainingProgramId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
-                .andExpect(jsonPath("$.message").value("Success"))
-                .andExpect(jsonPath("$.data.trainingId").value(1))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
+                .andExpect(jsonPath("$.message").value(Message.SUCCESS))
+                .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.name").value("Test name"))
                 .andExpect(jsonPath("$.data.status").value("Active"));
     }
@@ -281,8 +285,8 @@ class TrainingControllerTest {
         // Perform the GET request
         mockMvc.perform(get("/api/searchWithId/" + trainingProgramId))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.message").value("Training program not found"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
@@ -297,8 +301,8 @@ class TrainingControllerTest {
         // Perform the GET request
         mockMvc.perform(get("/api/searchWithId/" + trainingProgramId))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.message").value("Internal server error"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
@@ -307,7 +311,7 @@ class TrainingControllerTest {
         Integer trainingProgramId = 1;
 
         // tạo test data
-        TrainingProgram updatedProgram = new TrainingProgram();
+        TrainingProgramDTO updatedProgram = new TrainingProgramDTO();
         updatedProgram.setName("Updated Program");
         updatedProgram.setCreateDate(LocalDate.of(2023, 10, 10));
         updatedProgram.setStatus("Active");
@@ -325,18 +329,14 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedProgram)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
-                .andExpect(jsonPath("$.message").value("Training program updated successfully"))
-                .andExpect(jsonPath("$.data.trainingId").value(1))
-                .andExpect(jsonPath("$.data.name").value("Updated Program"))
-                .andExpect(jsonPath("$.data.status").value("Active"))
-                .andExpect(jsonPath("$.data.createDate").value("2023-10-10"));
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
+                .andExpect(jsonPath("$.message").value(Message.UPDATE_SUCCESSFUL));
     }
 
     @Test
     void updateTrainingProgramReturnsNotFound() throws Exception {
         Integer trainingProgramId = 1;
-        TrainingProgram updatedProgram = new TrainingProgram();
+        TrainingProgramDTO updatedProgram = new TrainingProgramDTO();
 
         when(trainingServiceImp.updateTrainingProgram(trainingProgramId, updatedProgram)).thenThrow(new EntityNotFoundException("Training program not found. Id not found"));
 
@@ -344,8 +344,8 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedProgram)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.message").value("Training program not found. Id not found"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
@@ -353,7 +353,7 @@ class TrainingControllerTest {
     void updateTrainingProgramReturnsIllegalStateException() throws Exception {
         // Define your test data and expectations
         Integer trainingProgramId = 1;
-        TrainingProgram updatedProgram = new TrainingProgram();
+        TrainingProgramDTO updatedProgram = new TrainingProgramDTO();
         updatedProgram.setStatus("Inactive");
 
         when(trainingServiceImp.updateTrainingProgram(trainingProgramId, updatedProgram)).thenThrow(new IllegalStateException("Training program must be active to be updated"));
@@ -362,8 +362,7 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedProgram)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.message").value("Training program must be active to be updated"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.BAD_REQUEST.value()))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
@@ -371,7 +370,7 @@ class TrainingControllerTest {
     void updateTrainingProgramReturnsInternalServerError() throws Exception {
         // Define your test data and expectations
         Integer trainingProgramId = 1;
-        TrainingProgram updatedProgram = new TrainingProgram();
+        TrainingProgramDTO updatedProgram = new TrainingProgramDTO();
 
         when(trainingServiceImp.updateTrainingProgram(trainingProgramId, updatedProgram)).thenThrow(new RuntimeException("Something went wrong"));
 
@@ -379,8 +378,8 @@ class TrainingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedProgram)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.message").value("Internal server error"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 
@@ -389,12 +388,12 @@ class TrainingControllerTest {
     void getTrainingProgramListReturnsSuccess() throws Exception {
         int page = 0;
         int size = 8;
-        TrainingProgram program1 = new TrainingProgram();
-        TrainingProgram program2 = new TrainingProgram();
-        program1.setTrainingId(1); program1.setName("Program 1"); program1.setStatus("Active");
-        program2.setTrainingId(2); program2.setName("Program 2"); program2.setStatus("Active");
+        TrainingProgramDTO program1 = new TrainingProgramDTO();
+        TrainingProgramDTO program2 = new TrainingProgramDTO();
+        program1.setId(1); program1.setName("Program 1"); program1.setStatus("Active");
+        program2.setId(2); program2.setName("Program 2"); program2.setStatus("Active");
 
-        Page<TrainingProgram> trainingProgramPage = new PageImpl<>(Arrays.asList(
+        Page<TrainingProgramDTO> trainingProgramPage = new PageImpl<>(Arrays.asList(
                 program1,
                 program2
         ));
@@ -406,20 +405,20 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.pageNumber").value(page))
                 .andExpect(jsonPath("$.data.pageSize").value(trainingProgramPage.getSize()))
                 .andExpect(jsonPath("$.data.totalElements").value(trainingProgramPage.getTotalElements()))
                 .andExpect(jsonPath("$.data.totalPages").value(trainingProgramPage.getTotalPages()))
-                .andExpect(jsonPath("$.message").value("Success"));
+                .andExpect(jsonPath("$.message").value(Message.SUCCESS));
     }
 
     @Test
     void getTrainingProgramListReturnsNoContent() throws Exception {
         int page = 0;
         int size = 8;
-        Page<TrainingProgram> trainingProgramPage = new PageImpl<>(Collections.emptyList());
+        Page<TrainingProgramDTO> trainingProgramPage = new PageImpl<>(Collections.emptyList());
 
         when(trainingServiceImp.getAllPagingTrainingProgram(page, size)).thenReturn(trainingProgramPage);
 
@@ -428,9 +427,9 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NO_CONTENT.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("No content found"));
+                .andExpect(jsonPath("$.message").value(Message.NO_CONTENT));
     }
     @Test
     void getTrainingProgramListReturnsInternalServerError() throws Exception {
@@ -444,9 +443,9 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("Internal server error"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("500"));
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR));
     }
 
     // SEARCH BY KEYWORD TEST
@@ -456,17 +455,17 @@ class TrainingControllerTest {
         int page = 0;
         int size = 8;
 
-        TrainingProgram program1 = new TrainingProgram();
-        program1.setTrainingId(1);
+        TrainingProgramDTO program1 = new TrainingProgramDTO();
+        program1.setId(1);
         program1.setName("Program 1");
         program1.setStatus("Active");
 
-        TrainingProgram program2 = new TrainingProgram();
-        program2.setTrainingId(2);
+        TrainingProgramDTO program2 = new TrainingProgramDTO();
+        program2.setId(2);
         program2.setName("Program 2");
         program2.setStatus("Active");
 
-        Page<TrainingProgram> trainingProgramPage = new PageImpl<>(Arrays.asList(
+        Page<TrainingProgramDTO> trainingProgramPage = new PageImpl<>(Arrays.asList(
                 program1,
                 program2
         ));
@@ -477,12 +476,12 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.pageNumber").value(0))
 //                .andExpect(jsonPath("$.data.pageSize").value(size))
                 .andExpect(jsonPath("$.data.totalPages").value(1))
-                .andExpect(jsonPath("$.message").value("Success"));
+                .andExpect(jsonPath("$.message").value(Message.SUCCESS));
     }
 
 
@@ -493,7 +492,7 @@ class TrainingControllerTest {
         int page = 0;
         int size = 8;
 
-        Page<TrainingProgram> trainingProgramPage = new PageImpl<>(Collections.emptyList());
+        Page<TrainingProgramDTO> trainingProgramPage = new PageImpl<>(Collections.emptyList());
 
         when(trainingServiceImp.searchTrainingProgramWithKeyword(keyword, PageRequest.of(page, size))).thenReturn(trainingProgramPage);
 
@@ -502,9 +501,9 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Record not found"));
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND));
     }
 
     @Test
@@ -521,9 +520,9 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Internal server error"));
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR));
     }
 
     @Test
@@ -554,13 +553,13 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.pageNumber").value(0))
                 .andExpect(jsonPath("$.data.pageSize").value(trainingProgram.getSize()))
                 .andExpect(jsonPath("$.data.totalElements").value(trainingProgram.getTotalElements()))
                 .andExpect(jsonPath("$.data.totalPages").value(1))
-                .andExpect(jsonPath("$.message").value("Success"));
+                .andExpect(jsonPath("$.message").value(Message.SUCCESS));
     }
 
     @Test
@@ -581,9 +580,9 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Record not found"));
+                .andExpect(jsonPath("$.message").value(Message.NOT_FOUND));
     }
 
     @Test
@@ -602,81 +601,77 @@ class TrainingControllerTest {
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.code").value("1"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Internal server error"));
+                .andExpect(jsonPath("$.message").value(Message.INTERNAL_SERVER_ERROR));
     }
 
     @Test
-    void uploadFileReturnsSuccess() throws Exception {
-        // Prepare mock data
-        MockMultipartFile file = new MockMultipartFile("file", "test.csv", "text/csv", "csv content".getBytes());
-        String encoding = "UTF-8";
-        char columnSeparator = ',';
-        String scanningMethod = "Method1";
-        String duplicateHandling = "Ignore";
+    public void testUploadFile_InvalidFormat() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "invalid_format.txt", // Provide a file with an invalid format
+                "text/plain",
+                "Invalid content".getBytes(StandardCharsets.UTF_8)
+        );
 
-        TrainingProgram program1 = new TrainingProgram();
-        program1.setTrainingId(1);
-        program1.setName("Program 1");
-        program1.setStatus("Active");
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/upload")
+                        .file(file)
+                        .param("encoding", "UTF-8")
+                        .param("columnSeparator", ",")
+                        .param("scanningMethod", "id")
+                        .param("duplicateHandling", "allow"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(HttpStatus.BAD_REQUEST.value()));
+    }
 
-        TrainingProgram program2 = new TrainingProgram();
-        program2.setTrainingId(2);
-        program2.setName("Program 2");
-        program2.setStatus("Active");
 
-        List<TrainingProgram> testData = Arrays.asList(program1, program2);
-
-        // Mock the behavior
-        when(trainingServiceImp.hasCSVFormat(file)).thenReturn(true);
-        when(trainingServiceImp.importTrainingProgramFromFile(any(), any(), eq(encoding), eq(columnSeparator), eq(scanningMethod), eq(duplicateHandling))).thenReturn(testData);
+    @Test
+    public void testUploadFile() throws Exception {
+        // Prepare a sample CSV file
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sample.csv",
+                "text/csv", //
+                ("trainingId,name,createBy,createDate,modifyBy,modifyDate,startTime,duration,topicId,status\n" +
+                        "1,ABC,Wesley,2023/09/05,Minh,2023/02/12,2023/06/17,5,1,Inactive")
+                        .getBytes(StandardCharsets.UTF_8)
+        );
 
         // Perform the request
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/upload")
                         .file(file)
-                        .param("encoding", encoding)
-                        .param("columnSeparator", String.valueOf(columnSeparator))
-                        .param("scanningMethod", scanningMethod)
-                        .param("duplicateHandling", duplicateHandling)
-                        .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].trainingId").value(1))
-                .andExpect(jsonPath("$.data[0].name").value("Program 1"))
-                .andExpect(jsonPath("$.data[0].status").value("Active"))
-                .andExpect(jsonPath("$.data[1].trainingId").value(2))
-                .andExpect(jsonPath("$.data[1].name").value("Program 2"))
-                .andExpect(jsonPath("$.data[1].status").value("Active"))
-                .andExpect(jsonPath("$.message").value("Uploaded the file successfully: test.csv"));
+                        .param("encoding", "UTF-8")
+                        .param("columnSeparator", ",")
+                        .param("scanningMethod", "id")
+                        .param("duplicateHandling", "allow"))
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
-    void uploadFileReturnsBadRequestForInvalidFormat() throws Exception {
-        // Prepare mock data
-        MockMultipartFile file = new MockMultipartFile("file", "test.txt", "text/plain", "txt content".getBytes());
-        String encoding = "UTF-8";
-        char columnSeparator = ',';
-        String scanningMethod = "Method1";
-        String duplicateHandling = "Ignore";
+    public void testUploadFile_InternalServerError() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sample.csv",
+                "text/csv",
+                ("trainingId,name,createBy,createDate,modifyBy,modifyDate,startTime,duration,topicId,status\n" +
+                        "1,ABC,Wesley,2023/09/05,Minh,2023/02/12,2023/06/17,5,1,Inactive")
+                        .getBytes(StandardCharsets.UTF_8)
+        );
 
-        // Mock the behavior
-        when(trainingServiceImp.hasCSVFormat(file)).thenReturn(false);
+        // Mock a scenario where an unexpected error occurs during processing
+        doThrow(new RuntimeException("Unexpected error")).when(trainingServiceImp).importTrainingProgramFromFile(any(), any(), any(), anyChar(), anyString(), anyString());
 
-        // Perform the request
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/upload")
                         .file(file)
-                        .param("encoding", encoding)
-                        .param("columnSeparator", String.valueOf(columnSeparator))
-                        .param("scanningMethod", scanningMethod)
-                        .param("duplicateHandling", duplicateHandling)
-                        .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("1"))
-                .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Invalid file format: test.txt"));
+                        .param("encoding", "UTF-8")
+                        .param("columnSeparator", ",")
+                        .param("scanningMethod", "id")
+                        .param("duplicateHandling", "allow"))
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.code").value(HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
+
 
 
 

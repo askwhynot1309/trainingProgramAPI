@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 public class TrainingProgramDetailDTO {
     Integer code;
-    TrainingProgram trainingProgramDTO;
+    TrainingProgramDTO trainingProgramDTO;
     List<SyllabusDTO> syllabusList;
     List<ClassDTO> classList;
     String message;

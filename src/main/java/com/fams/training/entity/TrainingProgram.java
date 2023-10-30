@@ -2,6 +2,7 @@ package com.fams.training.entity;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
@@ -36,15 +37,18 @@ public class TrainingProgram {
     private String createBy;
 
     @Column(name = "createDate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd")
     private LocalDate createDate;
 
     @Column(name = "modifyBy", length = 500)
     private String modifyBy;
 
     @Column(name = "modifyDate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd")
     private LocalDate modifyDate;
 
     @Column(name = "startTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd")
     private LocalDate startTime;
 
     @Column(name = "duration")

@@ -1,5 +1,6 @@
 package com.fams.training.controller;
 
+import com.fams.training.DTO.Message;
 import com.fams.training.DTO.PageableDTO;
 import com.fams.training.DTO.ResponseMessage;
 import com.fams.training.TrainingManagementApplication;
@@ -72,8 +73,8 @@ class ResourceControllerTest {
         ResponseEntity<ResponseMessage> responseEntity = resourceController.getAllResource(page, size);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("0", Objects.requireNonNull(responseEntity.getBody()).getCode());
-        assertEquals("Success", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.OK.value(), Objects.requireNonNull(responseEntity.getBody()).getCode());
+        assertEquals(Message.SUCCESS, responseEntity.getBody().getMessage());
 
         PageableDTO<Resource> data = (PageableDTO<Resource>) responseEntity.getBody().getData();
         assertEquals(2, data.getContent().size());
@@ -94,8 +95,8 @@ class ResourceControllerTest {
         ResponseEntity<ResponseMessage> responseEntity = resourceController.getAllResource(page, size);
 
         assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
-        assertEquals("1", responseEntity.getBody().getCode());
-        assertEquals("No content found", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.NO_CONTENT.value(), responseEntity.getBody().getCode());
+        assertEquals(Message.NO_CONTENT, responseEntity.getBody().getMessage());
         assertNull(responseEntity.getBody().getData());
     }
 
@@ -109,8 +110,8 @@ class ResourceControllerTest {
         ResponseEntity<ResponseMessage> responseEntity = resourceController.getAllResource(page, size);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("1", responseEntity.getBody().getCode());
-        assertEquals("Internal server error", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), responseEntity.getBody().getCode());
+        assertEquals(Message.INTERNAL_SERVER_ERROR, responseEntity.getBody().getMessage());
         assertNull(responseEntity.getBody().getData());
     }
 
@@ -127,9 +128,9 @@ class ResourceControllerTest {
                                 .param("description", description)
                                 .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0"))
+                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.message").value("Upload successfully"));
+                .andExpect(jsonPath("$.message").value(Message.SUCCESS));
     }
 
     @Test
@@ -142,8 +143,8 @@ class ResourceControllerTest {
         ResponseEntity<ResponseMessage> responseEntity = resourceController.uploadMaterialsResource(description, file);
 
         assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
-        assertEquals("1", responseEntity.getBody().getCode());
-        assertEquals("No file found", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.NO_CONTENT.value(), responseEntity.getBody().getCode());
+        assertEquals(Message.NO_CONTENT, responseEntity.getBody().getMessage());
         assertNull(responseEntity.getBody().getData());
     }
 
@@ -158,9 +159,9 @@ class ResourceControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("0", responseEntity.getBody().getCode());
+        assertEquals(HttpStatus.OK.value(), responseEntity.getBody().getCode());
         assertNull(responseEntity.getBody().getData());
-        assertEquals("Material deleted successfully", responseEntity.getBody().getMessage());
+        assertEquals(Message.SUCCESS, responseEntity.getBody().getMessage());
     }
 
     @Test
@@ -171,9 +172,9 @@ class ResourceControllerTest {
         ResponseEntity<ResponseMessage> responseEntity = resourceController.deleteTrainingMaterial(resourceId);
 
         assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
-        assertEquals("1", responseEntity.getBody().getCode());
+        assertEquals(HttpStatus.NO_CONTENT.value(), responseEntity.getBody().getCode());
         assertNull(responseEntity.getBody().getData());
-        assertEquals("Failed to delete material", responseEntity.getBody().getMessage());
+        assertEquals(Message.NO_CONTENT, responseEntity.getBody().getMessage());
     }
 
     @Test
