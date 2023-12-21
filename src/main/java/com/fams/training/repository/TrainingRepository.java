@@ -16,5 +16,6 @@ public interface TrainingRepository extends JpaRepository<TrainingProgram, Integ
     Page<TrainingProgram> findByNameContaining(String keyword, Pageable pageable);
     List<TrainingProgram> findAllByOrderByTrainingIdDesc();
     List<TrainingProgram> findByName(String name);
+    Page<TrainingProgram> findAllByStatus(String status,Pageable pageable);
 
 }

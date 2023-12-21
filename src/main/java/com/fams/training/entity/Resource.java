@@ -18,25 +18,25 @@ import java.time.LocalDateTime;
 public class Resource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "resourceId", nullable = false, length = 500)
+    @Column(name = "resourceId", nullable = false, length = 25)
     private Integer resourceId;
 
-    @Column(name = "title", length = 500)
+    @Column(name = "title", length = 50)
     private String title;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 200)
     private String description;
 
-    @Column(name = "status", length = 500)
+    @Column(name = "status", length = 25)
     private String status;
 
-    @Column(name = "filename", length = 500)
+    @Column(name = "filename", length = 50)
     private String filename;
 
-    @Column(name = "uploadedBy", length = 500, nullable = true)
+    @Column(name = "uploadedBy", length = 50, nullable = true)
     private String uploadedBy;
 
-    @Column(name ="typeFile", length = 500)
+    @Column(name ="typeFile", length = 50)
     private  String typeFile;
 
     @Column(name = "uploadDateTime")

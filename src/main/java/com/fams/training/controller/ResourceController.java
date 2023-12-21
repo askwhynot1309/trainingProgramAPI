@@ -86,22 +86,21 @@ public class ResourceController {
         }
     }
 
-    @GetMapping("/download-training-template")
-    public ResponseEntity<byte[]> downloadTrainingProgramTemplate() {
-        String title = "Training program template";
-        byte[] fileData = resourceService.downloadTrainingProgramTemplate(title);
-        if (fileData != null) {
-            Resource resource = repository.findById(1).orElse(null);
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + resource.getFilename());
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(fileData);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+//    @GetMapping("/download-training-template")
+//    public ResponseEntity<byte[]> downloadTrainingProgramTemplate() {
+//        String title = "Training program template";
+//        byte[] fileData = resourceService.downloadTrainingProgramTemplate(title);
+//        if (fileData != null) {
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + title);
+//            return ResponseEntity.ok()
+//                    .headers(headers)
+//                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                    .body(fileData);
+//        } else {
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
 
     @DeleteMapping("/delete-materials/{resourceId}")
     public ResponseEntity<ResponseMessage> deleteTrainingMaterial(@PathVariable int resourceId) {
